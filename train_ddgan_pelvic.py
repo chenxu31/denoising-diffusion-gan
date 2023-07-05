@@ -20,6 +20,7 @@ import torchvision
 import torchvision.transforms as transforms
 
 import platform
+import sys
 
 if platform.system() == 'Windows':
     sys.path.append(r"E:\我的坚果云\sourcecode\python\util")
@@ -503,6 +504,7 @@ if __name__ == '__main__':
     
     #geenrator and training
     parser.add_argument('--exp', default='experiment_cifar_default', help='name of experiment')
+    parser.add_argument('--gpu', default=0, help='gpu id')
     parser.add_argument('--data_dir', default='/home/chenxu/datasets/pelvic/h5_data_nonrigid', help='name of dataset')
     parser.add_argument('--modality', default='ct', help='name of dataset')
     parser.add_argument('--nz', type=int, default=100)
@@ -548,6 +550,12 @@ if __name__ == '__main__':
 
    
     args = parser.parse_args()
+
+    if args.gpu >= 0:
+        os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
+    else:
+        os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+
     args.world_size = args.num_proc_node * args.num_process_per_node
     size = args.num_process_per_node
 
