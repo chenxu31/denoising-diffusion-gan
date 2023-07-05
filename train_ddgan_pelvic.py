@@ -213,7 +213,7 @@ def train(rank, gpu, args):
     
     nz = args.nz #latent dimension
 
-    dataset = common_pelvic.Dataset(args.data_dir, modality=modality, n_slices=args.num_channels)
+    dataset = common_pelvic.Dataset(args.data_dir, modality=args.modality, n_slices=args.num_channels)
 
     train_sampler = torch.utils.data.distributed.DistributedSampler(dataset,
                                                                     num_replicas=args.world_size,
@@ -292,7 +292,8 @@ def train(rank, gpu, args):
     for epoch in range(init_epoch, args.num_epoch+1):
         train_sampler.set_epoch(epoch)
        
-        for iteration, (x, y) in enumerate(data_loader):
+        for iteration, data in enumerate(data_loader):
+            x = data["image"]
             for p in netD.parameters():  
                 p.requires_grad = True  
         
@@ -505,6 +506,7 @@ if __name__ == '__main__':
     #geenrator and training
     parser.add_argument('--exp', default='experiment_cifar_default', help='name of experiment')
     parser.add_argument('--gpu', default=0, help='gpu id')
+    parser.add_argument('--dataset', default='pelvic', help='name of dataset')
     parser.add_argument('--data_dir', default='/home/chenxu/datasets/pelvic/h5_data_nonrigid', help='name of dataset')
     parser.add_argument('--modality', default='ct', help='name of dataset')
     parser.add_argument('--nz', type=int, default=100)
