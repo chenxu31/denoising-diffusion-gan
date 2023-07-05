@@ -426,11 +426,10 @@ def train(rank, gpu, args):
                 if args.use_ema:
                     optimizerG.swap_parameters_with_ema(store_params_in_ema=True)
                     
-                torch.save(netG.state_dict(), os.path.join(exp_path, 'netG_{}.pth'.format(epoch)))
+                torch.save(netG.state_dict(), os.path.join(exp_path, 'netG_last.pth'))
                 if args.use_ema:
                     optimizerG.swap_parameters_with_ema(store_params_in_ema=True)
             
-
 
 def init_processes(rank, size, fn, args):
     """ Initialize the distributed environment. """
