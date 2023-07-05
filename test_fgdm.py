@@ -4,10 +4,19 @@ import argparse
 import os
 import logging
 import sys
+import platform
 import pdb
 import test_ddgan_pelvic
 import torch
+import skimage.io
 
+
+if platform.system() == 'Windows':
+    sys.path.append(r"E:\我的坚果云\sourcecode\python\util")
+else:
+    sys.path.append("/home/chenxu/我的坚果云/sourcecode/python/util")
+
+import common_pelvic_pt as common_pelvic
 
 def main(args, device):
     netG = test_ddgan_pelvic.NCSNpp(args).to(device)
@@ -27,7 +36,9 @@ def main(args, device):
     x_t_1 = torch.randn(4, args.num_channels, args.image_size, args.image_size).to(device)
     fake_sample = test_ddgan_pelvic.sample_from_model(pos_coeff, netG, args.num_timesteps, x_t_1, T, args)
 
-    pdb.set_trace()
+    fake_sample_np = fake_sample.detach().cpu().numpy()
+    gen_images = common_pelvic.generate_display_image(fake_sample_np, is_seg=False)
+    skimage.io.imsave(os.path.join(args.output_dir, "gen_images.jpg"), gen_images)
 
     print("xxx")
 
