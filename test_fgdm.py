@@ -51,7 +51,7 @@ def main(args, device):
         hpf = torch.sqrt(sobel_x * sobel_x + sobel_y * sobel_y)
         hpf = torch.where(hpf < eta, 0, hpf)
 
-    fake_sample = sample_from_model(pos_coeff, netG, netSobel, args.num_timesteps, lpf, T, args)
+    fake_sample = sample_from_model(pos_coeff, netG, netSobel, T, lpf, T, args, hpf)
 
     fake_sample_np = fake_sample.detach().cpu().numpy()
     gen_images = common_pelvic.generate_display_image(fake_sample_np, is_seg=False)
