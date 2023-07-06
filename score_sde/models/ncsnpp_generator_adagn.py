@@ -175,7 +175,7 @@ class NCSNpp(nn.Module):
 
     channels = config.num_channels
     if double_channels:
-      channels *= channels
+      channels *= 2
     if progressive_input != 'none':
       input_pyramid_ch = channels
 
