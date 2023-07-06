@@ -10,6 +10,7 @@ import test_ddgan_pelvic
 import train_ddgan_pelvic
 import torch
 import skimage.io
+from score_sde.models.ncsnpp_generator_adagn import NCSNpp
 
 
 if platform.system() == 'Windows':
@@ -20,7 +21,7 @@ else:
 import common_pelvic_pt as common_pelvic
 
 def main(args, device):
-    netG = train_ddgan_pelvic.NCSNpp(args, double_channels=True).to(device)
+    netG = NCSNpp(args, double_channels=True).to(device)
     ckpt = torch.load(os.path.join(args.checkpoint_dir, "netG_last.pth"), map_location=device)
 
     for key in list(ckpt.keys()):
