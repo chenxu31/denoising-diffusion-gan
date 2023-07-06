@@ -29,7 +29,7 @@ def main(args, device):
     netG.load_state_dict(ckpt)
     netG.eval()
 
-    netSobel = Sobel(args.num_channels).to(device)
+    netSobel = train_ddgan_pelvic.Sobel(args.num_channels).to(device)
     netSobel.eval()
 
     if not os.path.exists(args.output_dir):
@@ -41,11 +41,12 @@ def main(args, device):
     T = 4
 
     ####----
-    test_img = test_data_s[0:1, 128:129, :, :]
+    test_img = torch.from_numpy(test_data_s[0][128:129, :, :]).unsqueeze(0).to(device)
 
     coeff = train_ddgan_pelvic.Diffusion_Coefficients(args, device)
     pos_coeff = train_ddgan_pelvic.Posterior_Coefficients(args, device)
 
+    pdb.set_trace()
     lpf = train_ddgan_pelvic.q_sample(coeff, test_img, T)
     with torch.no_grad():
         sobel_x, sobel_y = netSobel(test_img)
