@@ -174,12 +174,10 @@ class NCSNpp(nn.Module):
     # Downsampling block
 
     channels = config.num_channels
-    if double_channels:
-      channels *= 2
     if progressive_input != 'none':
       input_pyramid_ch = channels
 
-    modules.append(conv3x3(channels, nf))
+    modules.append(conv3x3(channels * 2 if double_channels else channels, nf))
     hs_c = [nf]
 
     in_ch = nf
