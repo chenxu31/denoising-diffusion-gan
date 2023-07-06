@@ -175,7 +175,7 @@ class NCSNpp(nn.Module):
 
     channels = config.num_channels
     if progressive_input != 'none':
-      input_pyramid_ch = channels
+      input_pyramid_ch = channels * 2 if double_channels else channels
 
     modules.append(conv3x3(channels * 2 if double_channels else channels, nf))
     hs_c = [nf]
