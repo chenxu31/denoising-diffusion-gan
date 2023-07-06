@@ -7,6 +7,8 @@
 
 
 import argparse
+import pdb
+
 import torch
 import numpy as np
 
@@ -46,6 +48,39 @@ def copy_source(file, output_dir):
 def broadcast_params(params):
     for param in params:
         dist.broadcast(param.data, src=0)
+
+
+class Sobel(torch.nn.Module):
+    def __init__(self, ch=1):
+        super(Sobel, self).__init__()
+
+        sobel_x = torch.tensor([[1, 0, -1],
+                                [2, 0, -2],
+                                [1, 0, -1]], dtype=torch.float32)
+        sobel_y = torch.tensor([[1, 2, 1],
+                                [0, 0, 0],
+                                [-1, -2, -1]], dtype=torch.float32)
+
+        self.sobel_conv_x = torch.nn.Conv2d(ch, ch, kernel_size=3, stride=1, padding=1, bias=False)
+        self.sobel_conv_y = torch.nn.Conv2d(ch, ch, kernel_size=3, stride=1, padding=1, bias=False)
+
+        self.sobel_conv_x.weight.data = sobel_x.view(1, ch, 3, 3)
+        self.sobel_conv_y.weight.data = sobel_y.view(1, ch, 3, 3)
+
+    def forward(self, x):
+        output_x = self.sobel_conv_x(x)
+        output_y = self.sobel_conv_y(x)
+
+        return output_x, output_y
+
+
+def sobel_filter(x):
+    sobel_x = torch.tensor([[1, 0, -1],
+                            [2, 0, -2],
+                            [1, 0, -1]], dtype=torch.float32)
+    sobel_y = torch.tensor([[1, 2, 1],
+                            [0, 0, 0],
+                            [-1, -2, -1]], dtype=torch.float32)
 
 
 #%% Diffusion coefficients 
@@ -227,6 +262,8 @@ def train(rank, gpu, args):
                                                drop_last = True)
     
     netG = NCSNpp(args).to(device)
+    netSobel = Sobel(args.num_channels).to(device)
+    netSobel.eval()
     
 
     netD = Discriminator_large(nc = 2*args.num_channels, ngf = args.ngf,
@@ -251,6 +288,7 @@ def train(rank, gpu, args):
     #ddp
     netG = nn.parallel.DistributedDataParallel(netG, device_ids=[gpu])
     netD = nn.parallel.DistributedDataParallel(netD, device_ids=[gpu])
+    netSobel = nn.parallel.DistributedDataParallel(netSobel, device_ids=[gpu])
 
     
     exp = args.exp
@@ -294,6 +332,12 @@ def train(rank, gpu, args):
        
         for iteration, data in enumerate(data_loader):
             x = data["image"]
+
+            with torch.no_grad():
+                sobel_x, sobel_y = netSobel(x)
+
+            pdb.set_trace()
+
             for p in netD.parameters():  
                 p.requires_grad = True  
         
