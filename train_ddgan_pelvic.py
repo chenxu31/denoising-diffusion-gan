@@ -269,7 +269,7 @@ def train(rank, gpu, args):
                                                sampler=train_sampler,
                                                drop_last = True)
     
-    netG = NCSNpp(args).to(device)
+    netG = NCSNpp(args, double_channels=True).to(device)
     netSobel = Sobel(args.num_channels).to(device)
     netSobel.eval()
     
@@ -400,8 +400,7 @@ def train(rank, gpu, args):
 
             # train with fake
             latent_z = torch.randn(batch_size, nz, device=device)
-            
-            pdb.set_trace()
+
             x_0_predict = netG(torch.cat([x_tp1.detach(), hpf], dim=1), t, latent_z)
             x_pos_sample = sample_posterior(pos_coeff, x_0_predict, x_tp1, t)
             

@@ -60,7 +60,7 @@ class PixelNorm(nn.Module):
 class NCSNpp(nn.Module):
   """NCSN++ model"""
 
-  def __init__(self, config):
+  def __init__(self, config, double_channels=False):
     super().__init__()
     self.config = config
     self.not_use_tanh = config.not_use_tanh
@@ -174,6 +174,8 @@ class NCSNpp(nn.Module):
     # Downsampling block
 
     channels = config.num_channels
+    if double_channels:
+      channels *= channels
     if progressive_input != 'none':
       input_pyramid_ch = channels
 
