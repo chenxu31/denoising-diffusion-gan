@@ -7,6 +7,7 @@ import sys
 import platform
 import pdb
 import test_ddgan_pelvic
+import train_ddgan_pelvic
 import torch
 import skimage.io
 
@@ -19,7 +20,7 @@ else:
 import common_pelvic_pt as common_pelvic
 
 def main(args, device):
-    netG = test_ddgan_pelvic.NCSNpp(args).to(device)
+    netG = train_ddgan_pelvic.NCSNpp(args, double_channels=True).to(device)
     ckpt = torch.load(os.path.join(args.checkpoint_dir, "netG_last.pth"), map_location=device)
 
     for key in list(ckpt.keys()):
@@ -27,14 +28,30 @@ def main(args, device):
     netG.load_state_dict(ckpt)
     netG.eval()
 
-    T = test_ddgan_pelvic.get_time_schedule(args, device)
-    pos_coeff = test_ddgan_pelvic.Posterior_Coefficients(args, device)
+    netSobel = Sobel(args.num_channels).to(device)
+    netSobel.eval()
 
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
 
-    x_t_1 = torch.randn(4, args.num_channels, args.image_size, args.image_size).to(device)
-    fake_sample = test_ddgan_pelvic.sample_from_model(pos_coeff, netG, args.num_timesteps, x_t_1, T, args)
+    test_data_s, test_data_t, _, _ = common_pelvic.load_test_data(args.data_dir, valid=True)
+
+    eta = 10
+    T = 4
+
+    ####----
+    test_img = test_data_s[0:1, 128:129, :, :]
+
+    coeff = train_ddgan_pelvic.Diffusion_Coefficients(args, device)
+    pos_coeff = train_ddgan_pelvic.Posterior_Coefficients(args, device)
+
+    lpf = train_ddgan_pelvic.q_sample(coeff, test_img, T)
+    with torch.no_grad():
+        sobel_x, sobel_y = netSobel(test_img)
+        hpf = torch.sqrt(sobel_x * sobel_x + sobel_y * sobel_y)
+        hpf = torch.where(hpf < eta, 0, hpf)
+
+    fake_sample = sample_from_model(pos_coeff, netG, netSobel, args.num_timesteps, lpf, T, args)
 
     fake_sample_np = fake_sample.detach().cpu().numpy()
     gen_images = common_pelvic.generate_display_image(fake_sample_np, is_seg=False)

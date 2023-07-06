@@ -75,15 +75,6 @@ class Sobel(torch.nn.Module):
         return output_x, output_y
 
 
-def sobel_filter(x):
-    sobel_x = torch.tensor([[1, 0, -1],
-                            [2, 0, -2],
-                            [1, 0, -1]], dtype=torch.float32)
-    sobel_y = torch.tensor([[1, 2, 1],
-                            [0, 0, 0],
-                            [-1, -2, -1]], dtype=torch.float32)
-
-
 #%% Diffusion coefficients 
 def var_func_vp(t, beta_min, beta_max):
     log_mean_coeff = -0.25 * t ** 2 * (beta_max - beta_min) - 0.5 * t * beta_min
@@ -230,7 +221,7 @@ def sample_from_model(coefficients, generator, sobel, n_time, x_init, T, opt):
             latent_z = torch.randn(x.size(0), opt.nz, device=x.device)
 
             with torch.no_grad():
-                sobel_x, sobel_y = netSobel(x)
+                sobel_x, sobel_y = sobel(x)
                 eta = 10
                 hpf = torch.sqrt(sobel_x * sobel_x + sobel_y * sobel_y)
                 hpf = torch.where(hpf < eta, 0, hpf)
