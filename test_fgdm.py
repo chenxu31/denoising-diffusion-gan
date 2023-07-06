@@ -38,7 +38,6 @@ def main(args, device):
     test_data_s, test_data_t, _, _ = common_pelvic.load_test_data(args.data_dir, valid=True)
 
     eta = 10
-    T = train_ddgan_pelvic.get_time_schedule(args, device)
 
     ####----
     test_img = torch.from_numpy(test_data_s[0][128:129, :, :]).unsqueeze(0).to(device)
@@ -46,13 +45,13 @@ def main(args, device):
     coeff = train_ddgan_pelvic.Diffusion_Coefficients(args, device)
     pos_coeff = train_ddgan_pelvic.Posterior_Coefficients(args, device)
 
-    lpf = train_ddgan_pelvic.q_sample(coeff, test_img, T)
+    lpf = train_ddgan_pelvic.q_sample(coeff, test_img, torch.full((1,), args.num_timesteps, device=device, dtype=torch.long))
     with torch.no_grad():
         sobel_x, sobel_y = netSobel(test_img)
         hpf = torch.sqrt(sobel_x * sobel_x + sobel_y * sobel_y)
         hpf = torch.where(hpf < eta, 0, hpf)
 
-    fake_sample = sample_from_model(pos_coeff, netG, netSobel, args.num_timesteps, lpf, T, args, hpf)
+    fake_sample = sample_from_model(pos_coeff, netG, netSobel, args.num_timesteps, lpf, None, args, hpf)
 
     fake_sample_np = fake_sample.detach().cpu().numpy()
     gen_images = common_pelvic.generate_display_image(fake_sample_np, is_seg=False)
