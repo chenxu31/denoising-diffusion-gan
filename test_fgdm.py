@@ -38,7 +38,7 @@ def main(args, device):
     test_data_s, test_data_t, _, _ = common_pelvic.load_test_data(args.data_dir, valid=True)
 
     eta = 10
-    T = 4
+    T = train_ddgan_pelvic.get_time_schedule(args, device)
 
     ####----
     test_img = torch.from_numpy(test_data_s[0][128:129, :, :]).unsqueeze(0).to(device)
@@ -46,14 +46,13 @@ def main(args, device):
     coeff = train_ddgan_pelvic.Diffusion_Coefficients(args, device)
     pos_coeff = train_ddgan_pelvic.Posterior_Coefficients(args, device)
 
-    pdb.set_trace()
     lpf = train_ddgan_pelvic.q_sample(coeff, test_img, T)
     with torch.no_grad():
         sobel_x, sobel_y = netSobel(test_img)
         hpf = torch.sqrt(sobel_x * sobel_x + sobel_y * sobel_y)
         hpf = torch.where(hpf < eta, 0, hpf)
 
-    fake_sample = sample_from_model(pos_coeff, netG, netSobel, T, lpf, T, args, hpf)
+    fake_sample = sample_from_model(pos_coeff, netG, netSobel, args.num_timesteps, lpf, T, args, hpf)
 
     fake_sample_np = fake_sample.detach().cpu().numpy()
     gen_images = common_pelvic.generate_display_image(fake_sample_np, is_seg=False)
@@ -89,7 +88,7 @@ if __name__ == '__main__':
     parser.add_argument('--fourier_scale', type=float, default=16., help='scale of fourier transform')
     parser.add_argument('--not_use_tanh', action='store_true',default=False)
     parser.add_argument('--nz', type=int, default=100)
-    parser.add_argument('--num_timesteps', type=int, default=2)
+    parser.add_argument('--num_timesteps', type=int, default=4)
     parser.add_argument('--z_emb_dim', type=int, default=256)
     parser.add_argument('--t_emb_dim', type=int, default=256)
     parser.add_argument('--centered', action='store_false', default=True, help='-1,1 scale')
