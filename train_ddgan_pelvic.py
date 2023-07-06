@@ -13,6 +13,7 @@ import torch
 import numpy as np
 
 import os
+import random
 
 import torch.nn as nn
 import torch.nn.functional as F
@@ -219,7 +220,7 @@ def sample_posterior(coefficients, x_0,x_t, t):
     
     return sample_x_pos
 
-def sample_from_model(coefficients, generator, n_time, x_init, T, opt):
+def sample_from_model(coefficients, generator, sobel, n_time, x_init, T, opt):
     x = x_init
     with torch.no_grad():
         for i in reversed(range(n_time)):
@@ -227,7 +228,14 @@ def sample_from_model(coefficients, generator, n_time, x_init, T, opt):
           
             t_time = t
             latent_z = torch.randn(x.size(0), opt.nz, device=x.device)
-            x_0 = generator(x, t_time, latent_z)
+
+            with torch.no_grad():
+                sobel_x, sobel_y = netSobel(x)
+                eta = 10
+                hpf = torch.sqrt(sobel_x * sobel_x + sobel_y * sobel_y)
+                hpf = torch.where(hpf < eta, 0, hpf)
+
+            x_0 = generator(torch.cat([x, hpf], dim=1), t_time, latent_z)
             x_new = sample_posterior(coefficients, x_0, x, t)
             x = x_new.detach()
         
@@ -333,11 +341,6 @@ def train(rank, gpu, args):
         for iteration, data in enumerate(data_loader):
             x = data["image"]
 
-            with torch.no_grad():
-                sobel_x, sobel_y = netSobel(x)
-
-            pdb.set_trace()
-
             for p in netD.parameters():  
                 p.requires_grad = True  
         
@@ -346,6 +349,14 @@ def train(rank, gpu, args):
             
             #sample from p(x_0)
             real_data = x.to(device, non_blocking=True)
+
+
+            with torch.no_grad():
+                sobel_x, sobel_y = netSobel(real_data)
+
+                eta = random.randint(1, 25)
+                hpf = torch.sqrt(sobel_x * sobel_x + sobel_y * sobel_y)
+                hpf = torch.where(hpf < eta, 0, hpf)
             
             #sample t
             t = torch.randint(0, args.num_timesteps, (real_data.size(0),), device=device)
@@ -390,8 +401,8 @@ def train(rank, gpu, args):
             # train with fake
             latent_z = torch.randn(batch_size, nz, device=device)
             
-         
-            x_0_predict = netG(x_tp1.detach(), t, latent_z)
+            pdb.set_trace()
+            x_0_predict = netG(torch.cat([x_tp1.detach(), hpf], dim=1), t, latent_z)
             x_pos_sample = sample_posterior(pos_coeff, x_0_predict, x_tp1, t)
             
             output = netD(x_pos_sample, t, x_tp1.detach()).view(-1)
@@ -424,7 +435,7 @@ def train(rank, gpu, args):
             
                 
            
-            x_0_predict = netG(x_tp1.detach(), t, latent_z)
+            x_0_predict = netG(torch.cat([x_tp1.detach(), hpf], dim=1), t, latent_z)
             x_pos_sample = sample_posterior(pos_coeff, x_0_predict, x_tp1, t)
             
             output = netD(x_pos_sample, t, x_tp1.detach()).view(-1)
@@ -453,7 +464,7 @@ def train(rank, gpu, args):
                 torchvision.utils.save_image(x_pos_sample, os.path.join(exp_path, 'xpos_epoch_{}.png'.format(epoch)), normalize=True)
             
             x_t_1 = torch.randn_like(real_data)
-            fake_sample = sample_from_model(pos_coeff, netG, args.num_timesteps, x_t_1, T, args)
+            fake_sample = sample_from_model(pos_coeff, netG, netSobel, args.num_timesteps, x_t_1, T, args)
             torchvision.utils.save_image(fake_sample, os.path.join(exp_path, 'sample_discrete_epoch_{}.png'.format(epoch)), normalize=True)
             
             if args.save_content:
