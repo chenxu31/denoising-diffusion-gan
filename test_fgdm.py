@@ -11,6 +11,7 @@ import train_ddgan_pelvic
 import torch
 import skimage.io
 from score_sde.models.ncsnpp_generator_adagn import NCSNpp
+from skimage.metrics import structural_similarity as SSIM
 
 
 if platform.system() == 'Windows':
@@ -19,6 +20,21 @@ else:
     sys.path.append("/home/chenxu/我的坚果云/sourcecode/python/util")
 
 import common_pelvic_pt as common_pelvic
+import common_net_pt as common_net
+import common_metrics
+
+
+def produce(args, netG, netSobel, x, coeff, pos_coeff, T=4, eta=10):
+    lpf = train_ddgan_pelvic.q_sample(coeff, x, T)
+    with torch.no_grad():
+        sobel_x, sobel_y = netSobel(test_img)
+        hpf = torch.sqrt(sobel_x * sobel_x + sobel_y * sobel_y)
+        hpf = torch.where(hpf < eta, 0, hpf)
+
+    fake_sample = sample_from_model(pos_coeff, netG, netSobel, T, lpf, T, args, hpf)
+    pdb.set_trace()
+    return fake_sample
+
 
 def main(args, device):
     netG = NCSNpp(args, double_channels=True).to(device)
@@ -37,14 +53,33 @@ def main(args, device):
 
     test_data_s, test_data_t, _, _ = common_pelvic.load_test_data(args.data_dir, valid=True)
 
+
+    patch_shape = (args.num_channels, args.image_size, args.image_size)
+    coeff = train_ddgan_pelvic.Diffusion_Coefficients(args, device)
+    pos_coeff = train_ddgan_pelvic.Posterior_Coefficients(args, device)
+
+    psnr_list = numpy.zeros((len(test_data_t.shape[0],)), numpy.float32)
+    ssim_list = numpy.zeros((len(test_data_t.shape[0],)), numpy.float32)
+    for i in range(len(test_data_t)):
+        im_ts = common_net.produce_results(device, lambda x: produce(args, netG, netSobel, x, coeff, pos_coeff),
+                                           [patch_shape, ], [test_data_t[i], ], data_shape=test_data_t[i].shape,
+                                           patch_shape=patch_shape)
+        psnr_list[i] = common_metrics.psnr(im_ts, test_data_s[i])
+        ssim_list[i] = SSIM(im_ts, test_data_s[i])
+
+        common_pelvic.save_nii(im_ts, "syn_ts_%d.nii.gz" % i)
+
+    msg = "psnr_list:%s/%s  ssim_list:%s/%s" % (psnr_list.mean(), psnr_list.std(), ssim_list.mean(), ssim_list.std())
+    print(msg)
+    with open(os.path.join(args.output_dir, "result.txt"), "w") as f:
+        f.write(msg)
+
+    return
+    ####----
     eta = 10
     T = 4
 
-    ####----
     test_img = test_data_s[0:1, 128:129, :, :]
-
-    coeff = train_ddgan_pelvic.Diffusion_Coefficients(args, device)
-    pos_coeff = train_ddgan_pelvic.Posterior_Coefficients(args, device)
 
     lpf = train_ddgan_pelvic.q_sample(coeff, test_img, T)
     with torch.no_grad():
