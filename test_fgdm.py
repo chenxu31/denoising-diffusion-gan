@@ -51,8 +51,11 @@ def main(args, device):
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
 
-    test_data_s, test_data_t, _, _ = common_pelvic.load_test_data(args.data_dir, valid=True)
+    test_data_s, test_data_t, _, _ = common_pelvic.load_test_data(args.data_dir)
     test_data_t = (test_data_t + 1.) / 2 ####----
+
+    test_ids = common_pelvic.load_data_ids(args.data_dir, "testing", "treat")
+    valid_range = common_pelvic.load_valid_range(args.data_dir, phase="test")
 
     patch_shape = (args.num_channels, args.image_size, args.image_size)
     coeff = train_ddgan_pelvic.Diffusion_Coefficients(args, device)
@@ -65,10 +68,10 @@ def main(args, device):
                                            [patch_shape, ], [test_data_t[i], ], data_shape=test_data_t[i].shape,
                                            patch_shape=patch_shape)
         im_ts = im_ts * 2. - 1. ####----
-        psnr_list[i] = common_metrics.psnr(im_ts, test_data_s[i])
-        ssim_list[i] = SSIM(im_ts, test_data_s[i])
+        psnr_list[i] = common_metrics.psnr(im_ts[valid_range[i, 0]:valid_range[i, 1] + 1, :, :], test_data_s[i, valid_range[i, 0]:valid_range[i, 1] + 1, :, :])
+        ssim_list[i] = SSIM(im_ts[valid_range[i, 0]:valid_range[i, 1] + 1, :, :], test_data_s[i, valid_range[i, 0]:valid_range[i, 1] + 1, :, :])
 
-        common_pelvic.save_nii(im_ts, "syn_ts_%d.nii.gz" % i)
+        common_pelvic.save_nii(im_ts, "syn_ts_%s.nii.gz" % test_ids[i])
 
     msg = "psnr_list:%s/%s  ssim_list:%s/%s" % (psnr_list.mean(), psnr_list.std(), ssim_list.mean(), ssim_list.std())
     print(msg)
