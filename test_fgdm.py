@@ -10,6 +10,7 @@ import test_ddgan_pelvic
 import train_ddgan_pelvic
 import torch
 import skimage.io
+import numpy
 from score_sde.models.ncsnpp_generator_adagn import NCSNpp
 from skimage.metrics import structural_similarity as SSIM
 
@@ -27,11 +28,11 @@ import common_metrics
 def produce(args, netG, netSobel, x, coeff, pos_coeff, T=4, eta=10):
     lpf = train_ddgan_pelvic.q_sample(coeff, x, torch.full((x.shape[0],), T, device=x.device, dtype=torch.long))
     with torch.no_grad():
-        sobel_x, sobel_y = netSobel(test_img)
+        sobel_x, sobel_y = netSobel(x)
         hpf = torch.sqrt(sobel_x * sobel_x + sobel_y * sobel_y)
         hpf = torch.where(hpf < eta, 0, hpf)
 
-    fake_sample = sample_from_model(pos_coeff, netG, netSobel, T, lpf, None, args, hpf)
+    fake_sample = train_ddgan_pelvic.sample_from_model(pos_coeff, netG, netSobel, T, lpf, None, args, hpf)
     return fake_sample.clamp(0, 1.) ####----
 
 
@@ -57,8 +58,8 @@ def main(args, device):
     coeff = train_ddgan_pelvic.Diffusion_Coefficients(args, device)
     pos_coeff = train_ddgan_pelvic.Posterior_Coefficients(args, device)
 
-    psnr_list = numpy.zeros((len(test_data_t.shape[0],)), numpy.float32)
-    ssim_list = numpy.zeros((len(test_data_t.shape[0],)), numpy.float32)
+    psnr_list = numpy.zeros((len(test_data_t),), numpy.float32)
+    ssim_list = numpy.zeros((len(test_data_t),), numpy.float32)
     for i in range(len(test_data_t)):
         im_ts = common_net.produce_results(device, lambda x: produce(args, netG, netSobel, x, coeff, pos_coeff),
                                            [patch_shape, ], [test_data_t[i], ], data_shape=test_data_t[i].shape,
@@ -89,7 +90,7 @@ def main(args, device):
         hpf = torch.sqrt(sobel_x * sobel_x + sobel_y * sobel_y)
         hpf = torch.where(hpf < eta, 0, hpf)
 
-    fake_sample = sample_from_model(pos_coeff, netG, netSobel, args.num_timesteps, lpf, None, args, hpf)
+    fake_sample = train_ddgan_pelvic.sample_from_model(pos_coeff, netG, netSobel, args.num_timesteps, lpf, None, args, hpf)
 
     fake_sample_np = fake_sample.detach().cpu().numpy()
     gen_images = common_pelvic.generate_display_image(fake_sample_np, is_seg=False)
