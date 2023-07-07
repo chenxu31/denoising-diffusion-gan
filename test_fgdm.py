@@ -25,15 +25,14 @@ import common_metrics
 
 
 def produce(args, netG, netSobel, x, coeff, pos_coeff, T=4, eta=10):
-    lpf = train_ddgan_pelvic.q_sample(coeff, x, T)
+    lpf = train_ddgan_pelvic.q_sample(coeff, x, torch.full((x.shape[0],), T, device=x.device, dtype=torch.long))
     with torch.no_grad():
         sobel_x, sobel_y = netSobel(test_img)
         hpf = torch.sqrt(sobel_x * sobel_x + sobel_y * sobel_y)
         hpf = torch.where(hpf < eta, 0, hpf)
 
-    fake_sample = sample_from_model(pos_coeff, netG, netSobel, T, lpf, T, args, hpf)
-    pdb.set_trace()
-    return fake_sample
+    fake_sample = sample_from_model(pos_coeff, netG, netSobel, T, lpf, None, args, hpf)
+    return fake_sample.clamp(0, 1.) ####----
 
 
 def main(args, device):
@@ -52,7 +51,7 @@ def main(args, device):
         os.makedirs(args.output_dir)
 
     test_data_s, test_data_t, _, _ = common_pelvic.load_test_data(args.data_dir, valid=True)
-
+    test_data_t = (test_data_t + 1.) / 2 ####----
 
     patch_shape = (args.num_channels, args.image_size, args.image_size)
     coeff = train_ddgan_pelvic.Diffusion_Coefficients(args, device)
@@ -64,6 +63,7 @@ def main(args, device):
         im_ts = common_net.produce_results(device, lambda x: produce(args, netG, netSobel, x, coeff, pos_coeff),
                                            [patch_shape, ], [test_data_t[i], ], data_shape=test_data_t[i].shape,
                                            patch_shape=patch_shape)
+        im_ts = im_ts * 2. - 1. ####----
         psnr_list[i] = common_metrics.psnr(im_ts, test_data_s[i])
         ssim_list[i] = SSIM(im_ts, test_data_s[i])
 

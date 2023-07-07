@@ -332,6 +332,7 @@ def train(rank, gpu, args):
        
         for iteration, data in enumerate(data_loader):
             x = data["image"]
+            x = (x + 1.) / 2 ####----
 
             for p in netD.parameters():  
                 p.requires_grad = True  
