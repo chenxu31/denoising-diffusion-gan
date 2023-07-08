@@ -25,7 +25,7 @@ import common_net_pt as common_net
 import common_metrics
 
 
-def produce(args, netG, netSobel, x, coeff, pos_coeff, T=4, eta=10):
+def produce(args, netG, netSobel, x, coeff, pos_coeff, T=4, eta=3):
     lpf = train_ddgan_pelvic.q_sample(coeff, x, torch.full((x.shape[0],), T, device=x.device, dtype=torch.long))
     with torch.no_grad():
         sobel_x, sobel_y = netSobel(x)
@@ -33,7 +33,7 @@ def produce(args, netG, netSobel, x, coeff, pos_coeff, T=4, eta=10):
         hpf = torch.where(hpf < eta, 0, hpf)
 
     fake_sample = train_ddgan_pelvic.sample_from_model(pos_coeff, netG, netSobel, T, lpf, None, args, hpf)
-    return fake_sample.clamp(0, 1.) ####----
+    return fake_sample.clamp(-1., 1.)
 
 
 def main(args, device):
@@ -52,7 +52,6 @@ def main(args, device):
         os.makedirs(args.output_dir)
 
     test_data_s, test_data_t, _, _ = common_pelvic.load_test_data(args.data_dir)
-    test_data_t = (test_data_t + 1.) / 2 ####----
 
     test_ids = common_pelvic.load_data_ids(args.data_dir, "testing", "treat")
     valid_range = common_pelvic.load_valid_range(args.data_dir, phase="test")
@@ -67,7 +66,6 @@ def main(args, device):
         im_ts = common_net.produce_results(device, lambda x: produce(args, netG, netSobel, x, coeff, pos_coeff),
                                            [patch_shape, ], [test_data_t[i], ], data_shape=test_data_t[i].shape,
                                            patch_shape=patch_shape)
-        im_ts = im_ts * 2. - 1. ####----
         psnr_list[i] = common_metrics.psnr(im_ts[valid_range[i, 0]:valid_range[i, 1] + 1, :, :], test_data_s[i, valid_range[i, 0]:valid_range[i, 1] + 1, :, :])
         ssim_list[i] = SSIM(im_ts[valid_range[i, 0]:valid_range[i, 1] + 1, :, :], test_data_s[i, valid_range[i, 0]:valid_range[i, 1] + 1, :, :])
 
@@ -77,29 +75,6 @@ def main(args, device):
     print(msg)
     with open(os.path.join(args.output_dir, "result.txt"), "w") as f:
         f.write(msg)
-
-    return
-    ####----
-    eta = 10
-    test_img = torch.from_numpy(test_data_s[0][128:129, :, :]).unsqueeze(0).to(device)
-
-    coeff = train_ddgan_pelvic.Diffusion_Coefficients(args, device)
-    pos_coeff = train_ddgan_pelvic.Posterior_Coefficients(args, device)
-
-    lpf = train_ddgan_pelvic.q_sample(coeff, test_img, torch.full((1,), args.num_timesteps, device=device, dtype=torch.long))
-
-    with torch.no_grad():
-        sobel_x, sobel_y = netSobel(test_img)
-        hpf = torch.sqrt(sobel_x * sobel_x + sobel_y * sobel_y)
-        hpf = torch.where(hpf < eta, 0, hpf)
-
-    fake_sample = train_ddgan_pelvic.sample_from_model(pos_coeff, netG, netSobel, args.num_timesteps, lpf, None, args, hpf)
-
-    fake_sample_np = fake_sample.detach().cpu().numpy()
-    gen_images = common_pelvic.generate_display_image(fake_sample_np, is_seg=False)
-    skimage.io.imsave(os.path.join(args.output_dir, "gen_images.jpg"), gen_images)
-
-    print("xxx")
 
 
 if __name__ == '__main__':

@@ -332,7 +332,6 @@ def train(rank, gpu, args):
        
         for iteration, data in enumerate(data_loader):
             x = data["image"]
-            x = (x + 1.) / 2 ####----
 
             for p in netD.parameters():  
                 p.requires_grad = True  
@@ -347,7 +346,7 @@ def train(rank, gpu, args):
             with torch.no_grad():
                 sobel_x, sobel_y = netSobel(real_data)
 
-                eta = random.randint(1, 25)
+                eta = 3#random.randint(1, 25)
                 hpf = torch.sqrt(sobel_x * sobel_x + sobel_y * sobel_y)
                 hpf = torch.where(hpf < eta, 0, hpf)
             
