@@ -25,7 +25,7 @@ import common_net_pt as common_net
 import common_metrics
 
 
-def produce(args, netG, netSobel, x, coeff, pos_coeff, T=4, eta=3):
+def produce(args, netG, netSobel, x, coeff, pos_coeff, T=4, eta=10):
     lpf = train_ddgan_pelvic.q_sample(coeff, x, torch.full((x.shape[0],), T, device=x.device, dtype=torch.long))
     with torch.no_grad():
         sobel_x, sobel_y = netSobel(x)
@@ -63,7 +63,7 @@ def main(args, device):
     psnr_list = numpy.zeros((len(test_data_t),), numpy.float32)
     ssim_list = numpy.zeros((len(test_data_t),), numpy.float32)
     for i in range(len(test_data_t)):
-        im_ts = common_net.produce_results(device, lambda x: produce(args, netG, netSobel, x, coeff, pos_coeff),
+        im_ts = common_net.produce_results(device, lambda x: produce(args, netG, netSobel, x, coeff, pos_coeff, eta=args.eta),
                                            [patch_shape, ], [test_data_t[i], ], data_shape=test_data_t[i].shape,
                                            patch_shape=patch_shape)
         psnr_list[i] = common_metrics.psnr(im_ts[valid_range[i, 0]:valid_range[i, 1] + 1, :, :], test_data_s[i, valid_range[i, 0]:valid_range[i, 1] + 1, :, :])
@@ -109,6 +109,7 @@ if __name__ == '__main__':
     parser.add_argument('--t_emb_dim', type=int, default=256)
     parser.add_argument('--centered', action='store_false', default=True, help='-1,1 scale')
     parser.add_argument('--use_geometric', action='store_true',default=False)
+    parser.add_argument('--eta', type=float, default= 10, help='eta')
     parser.add_argument('--beta_min', type=float, default= 0.1, help='beta_min for diffusion')
     parser.add_argument('--beta_max', type=float, default=20., help='beta_max for diffusion')
 
