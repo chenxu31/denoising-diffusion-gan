@@ -51,6 +51,10 @@ def main(args, device):
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
 
+    output_valid_dir = args.output_dir + "_valid"
+    if not os.path.exists(output_valid_dir):
+        os.makedirs(output_valid_dir)
+
     test_data_s, test_data_t, _, _ = common_pelvic.load_test_data(args.data_dir)
 
     test_ids = common_pelvic.load_data_ids(args.data_dir, "testing", "treat")
@@ -70,14 +74,19 @@ def main(args, device):
         ssim_list[i] = SSIM(im_ts[valid_range[i, 0]:valid_range[i, 1] + 1, :, :], test_data_s[i, valid_range[i, 0]:valid_range[i, 1] + 1, :, :])
 
         common_pelvic.save_nii(im_ts, os.path.join(args.output_dir, "syn_%s.nii.gz" % test_ids[i]))
+        common_pelvic.save_nii(im_ts[valid_range[i, 0]:valid_range[i, 1] + 1, :, :], os.path.join(output_valid_dir, "syn_%s.nii.gz" % test_ids[i]))
 
     msg = "psnr_list:%s/%s  ssim_list:%s/%s" % (psnr_list.mean(), psnr_list.std(), ssim_list.mean(), ssim_list.std())
     print(msg)
     with open(os.path.join(args.output_dir, "result.txt"), "w") as f:
         f.write(msg)
+    with open(os.path.join(output_valid_dir, "result.txt"), "w") as f:
+        f.write(msg)
 
     numpy.save(os.path.join(args.output_dir, "psnr.npy"), psnr_list)
     numpy.save(os.path.join(args.output_dir, "ssim.npy"), ssim_list)
+    numpy.save(os.path.join(output_valid_dir, "psnr.npy"), psnr_list)
+    numpy.save(os.path.join(output_valid_dir, "ssim.npy"), ssim_list)
 
 
 if __name__ == '__main__':
