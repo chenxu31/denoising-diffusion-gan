@@ -63,7 +63,7 @@ def main(args, device):
     psnr_list = numpy.zeros((len(test_data_t),), numpy.float32)
     ssim_list = numpy.zeros((len(test_data_t),), numpy.float32)
     for i in range(len(test_data_t)):
-        im_ts = common_net.produce_results(device, lambda x: produce(args, netG, netSobel, x, coeff, pos_coeff, eta=args.eta),
+        im_ts = common_net.produce_results(device, lambda x: produce(args, netG, netSobel, x, coeff, pos_coeff, T=args.num_timesteps, eta=args.eta),
                                            [patch_shape, ], [test_data_t[i], ], data_shape=test_data_t[i].shape,
                                            patch_shape=patch_shape)
         psnr_list[i] = common_metrics.psnr(im_ts[valid_range[i, 0]:valid_range[i, 1] + 1, :, :], test_data_s[i, valid_range[i, 0]:valid_range[i, 1] + 1, :, :])
