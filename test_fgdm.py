@@ -83,10 +83,10 @@ def main(args, device):
     with open(os.path.join(output_valid_dir, "result.txt"), "w") as f:
         f.write(msg)
 
-    numpy.save(os.path.join(args.output_dir, "psnr.npy"), psnr_list)
-    numpy.save(os.path.join(args.output_dir, "ssim.npy"), ssim_list)
-    numpy.save(os.path.join(output_valid_dir, "psnr.npy"), psnr_list)
-    numpy.save(os.path.join(output_valid_dir, "ssim.npy"), ssim_list)
+    numpy.save(os.path.join(args.output_dir, "ts_psnr.npy"), psnr_list)
+    numpy.save(os.path.join(args.output_dir, "ts_ssim.npy"), ssim_list)
+    numpy.save(os.path.join(output_valid_dir, "ts_psnr.npy"), psnr_list)
+    numpy.save(os.path.join(output_valid_dir, "ts_ssim.npy"), ssim_list)
 
 
 if __name__ == '__main__':
