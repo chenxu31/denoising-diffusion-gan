@@ -69,12 +69,15 @@ def main(args, device):
         psnr_list[i] = common_metrics.psnr(im_ts[valid_range[i, 0]:valid_range[i, 1] + 1, :, :], test_data_s[i, valid_range[i, 0]:valid_range[i, 1] + 1, :, :])
         ssim_list[i] = SSIM(im_ts[valid_range[i, 0]:valid_range[i, 1] + 1, :, :], test_data_s[i, valid_range[i, 0]:valid_range[i, 1] + 1, :, :])
 
-        common_pelvic.save_nii(im_ts, "syn_ts_%s.nii.gz" % test_ids[i])
+        common_pelvic.save_nii(im_ts, os.path.join(args.output_dir, "syn_%s.nii.gz" % test_ids[i]))
 
     msg = "psnr_list:%s/%s  ssim_list:%s/%s" % (psnr_list.mean(), psnr_list.std(), ssim_list.mean(), ssim_list.std())
     print(msg)
     with open(os.path.join(args.output_dir, "result.txt"), "w") as f:
         f.write(msg)
+
+    numpy.save(os.path.join(args.output_dir, "psnr.npy"), psnr_list)
+    numpy.save(os.path.join(args.output_dir, "ssim.npy"), ssim_list)
 
 
 if __name__ == '__main__':
