@@ -186,7 +186,7 @@ if __name__ == '__main__':
                         help='seed used for initialization')
     parser.add_argument('--compute_fid', action='store_true', default=False,
                             help='whether or not compute FID')
-    parser.add_argument('--epoch_id', type=int,default=1000)
+    parser.add_argument('--epoch_id', type=int,default=100)
     parser.add_argument('--num_channels', type=int, default=1,
                             help='channel of image')
     parser.add_argument('--centered', action='store_false', default=True,
@@ -242,8 +242,7 @@ if __name__ == '__main__':
     parser.add_argument('--dataset', default='brats', help='name of dataset')
     parser.add_argument('--data_dir', default='/home/chenxu/datasets/brats/h5_data', help='name of dataset')
     parser.add_argument('--modality', default='t1', choices=["t1", "t2"], help='name of dataset')
-    parser.add_argument('--image_size', type=int, default=256,
-                            help='size of image')
+    parser.add_argument('--image_size', type=int, default=240, help='size of image')
 
     parser.add_argument('--nz', type=int, default=100)
     parser.add_argument('--num_timesteps', type=int, default=4)
@@ -251,7 +250,7 @@ if __name__ == '__main__':
     
     parser.add_argument('--z_emb_dim', type=int, default=256)
     parser.add_argument('--t_emb_dim', type=int, default=256)
-    parser.add_argument('--batch_size', type=int, default=200, help='sample generating batch size')
+    parser.add_argument('--batch_size', type=int, default=16, help='sample generating batch size')
    
     args = parser.parse_args()
 

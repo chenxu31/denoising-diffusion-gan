@@ -426,6 +426,6 @@ class NCSNpp(nn.Module):
     
     if not self.not_use_tanh:
 
-        return torch.sigmoid(h) ####----torch.tanh(h)
+        return torch.tanh(h)
     else:
         return h

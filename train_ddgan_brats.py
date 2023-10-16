@@ -223,7 +223,7 @@ def sample_from_model(coefficients, generator, sobel, n_time, x_init, T, opt, hp
             if hpf is None:
                 with torch.no_grad():
                     sobel_x, sobel_y = sobel(x)
-                    eta = 10
+                    eta = opt.eta
                     hpf = torch.sqrt(sobel_x * sobel_x + sobel_y * sobel_y)
                     hpf = torch.where(hpf < eta, 0, hpf)
 
@@ -332,7 +332,6 @@ def train(rank, gpu, args):
        
         for iteration, data in enumerate(data_loader):
             x = data["image"]
-            x = (x + 1.) / 2 ####----
 
             for p in netD.parameters():  
                 p.requires_grad = True  
@@ -346,8 +345,7 @@ def train(rank, gpu, args):
 
             with torch.no_grad():
                 sobel_x, sobel_y = netSobel(real_data)
-
-                eta = random.randint(1, 25)
+                eta = random.randint(1, int(args.eta * 2))
                 hpf = torch.sqrt(sobel_x * sobel_x + sobel_y * sobel_y)
                 hpf = torch.where(hpf < eta, 0, hpf)
             
@@ -560,9 +558,10 @@ if __name__ == '__main__':
 
     parser.add_argument('--z_emb_dim', type=int, default=256)
     parser.add_argument('--t_emb_dim', type=int, default=256)
-    parser.add_argument('--batch_size', type=int, default=4, help='input batch size')
+    parser.add_argument('--batch_size', type=int, default=16, help='input batch size')
     parser.add_argument('--num_epoch', type=int, default=100)
     parser.add_argument('--ngf', type=int, default=64)
+    parser.add_argument('--eta', type=float, default=10, help='eta')
 
     parser.add_argument('--lr_g', type=float, default=1.5e-4, help='learning rate g')
     parser.add_argument('--lr_d', type=float, default=1e-4, help='learning rate d')
@@ -571,6 +570,7 @@ if __name__ == '__main__':
     parser.add_argument('--beta2', type=float, default=0.9,
                             help='beta2 for adam')
     parser.add_argument('--no_lr_decay',action='store_true', default=False)
+    
     
     parser.add_argument('--use_ema', action='store_true', default=False,
                             help='use EMA or not')
