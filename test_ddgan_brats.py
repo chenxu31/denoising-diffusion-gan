@@ -238,7 +238,7 @@ if __name__ == '__main__':
     
     #geenrator and training
     parser.add_argument('--exp', default='ct', help='name of experiment')
-    parser.add_argument('--gpu', default=0, help='gpu id')
+    parser.add_argument('--gpu', type=int, default=0, help='gpu id')
     parser.add_argument('--dataset', default='brats', help='name of dataset')
     parser.add_argument('--data_dir', default='/home/chenxu/datasets/brats/h5_data', help='name of dataset')
     parser.add_argument('--modality', default='t2', help='name of dataset')

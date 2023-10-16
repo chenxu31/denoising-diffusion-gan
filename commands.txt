@@ -3,9 +3,9 @@ python train_ddgan_pelvic.py --data_dir /home/chenxu/datasets/pelvic/h5_data_non
 python test_fgdm.py --checkpoint_dir saved_info/dd_gan/pelvic/ct --output_dir ~/training/test_output/fgdm --num_channels_dae 32 --ch_mult 1 2 4 --num_res_blocks 1 --eta 1
 
 
-python train_ddgan_brats.py --data_dir /home/chenxu/datasets/brats/h5_data --image_size 240 --exp t1 --modality t1 --num_channels 1 --num_channels_dae 32 --ch_mult 1 2 4 --num_timesteps 4 --num_res_blocks 1 --batch_size 16 --num_epoch 100 --ngf 32 --embedding_type positional --use_ema --r1_gamma 2. --z_emb_dim 256 --lr_d 1e-4 --lr_g 2e-4 --lazy_reg 10  --num_process_per_node 1 --save_content --eta 1
+python train_ddgan_brats.py --data_dir /home/chenxu/datasets/brats/h5_data --image_size 240 --exp t2 --modality t2 --num_channels 1 --num_channels_dae 32 --ch_mult 1 2 4 --num_timesteps 4 --num_res_blocks 1 --batch_size 16 --num_epoch 100 --ngf 32 --embedding_type positional --use_ema --r1_gamma 2. --z_emb_dim 256 --lr_d 1e-4 --lr_g 2e-4 --lazy_reg 10  --num_process_per_node 1 --save_content --eta 1 --gpu 0
 
-python test_fgdm.py --checkpoint_dir saved_info/dd_gan/brats/t1 --output_dir ~/training/test_output/fgdm/brats --num_channels_dae 32 --ch_mult 1 2 4 --num_res_blocks 1 --eta 1
+python test_fgdm_brats.py --checkpoint_dir saved_info/dd_gan/brats/t2 --output_dir ~/training/test_output/fgdm/brats --num_channels_dae 32 --ch_mult 1 2 4 --num_res_blocks 1 --eta 1 --gpu 0
 
 
 
