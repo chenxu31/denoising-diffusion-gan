@@ -241,7 +241,7 @@ if __name__ == '__main__':
     parser.add_argument('--gpu', default=0, help='gpu id')
     parser.add_argument('--dataset', default='brats', help='name of dataset')
     parser.add_argument('--data_dir', default='/home/chenxu/datasets/brats/h5_data', help='name of dataset')
-    parser.add_argument('--modality', default='t1', choices=["t1", "t2"], help='name of dataset')
+    parser.add_argument('--modality', default='t2', help='name of dataset')
     parser.add_argument('--image_size', type=int, default=240, help='size of image')
 
     parser.add_argument('--nz', type=int, default=100)
