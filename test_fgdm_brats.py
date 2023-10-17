@@ -6,8 +6,8 @@ import logging
 import sys
 import platform
 import pdb
-import test_ddgan_pelvic
-import train_ddgan_pelvic
+import test_ddgan_brats
+import train_ddgan_brats
 import torch
 import skimage.io
 import numpy
@@ -26,13 +26,13 @@ import common_metrics
 
 
 def produce(args, netG, netSobel, x, coeff, pos_coeff, T=4, eta=10):
-    lpf = train_ddgan_pelvic.q_sample(coeff, x, torch.full((x.shape[0],), T, device=x.device, dtype=torch.long))
+    lpf = train_ddgan_brats.q_sample(coeff, x, torch.full((x.shape[0],), T, device=x.device, dtype=torch.long))
     with torch.no_grad():
         sobel_x, sobel_y = netSobel(x)
         hpf = torch.sqrt(sobel_x * sobel_x + sobel_y * sobel_y)
         hpf = torch.where(hpf < eta, 0, hpf)
 
-    fake_sample = train_ddgan_pelvic.sample_from_model(pos_coeff, netG, netSobel, T, lpf, None, args, hpf)
+    fake_sample = train_ddgan_brats.sample_from_model(pos_coeff, netG, netSobel, T, lpf, None, args, hpf)
     return fake_sample.clamp(-1., 1.)
 
 
@@ -45,7 +45,7 @@ def main(args, device):
     netG.load_state_dict(ckpt)
     netG.eval()
 
-    netSobel = train_ddgan_pelvic.Sobel(args.num_channels).to(device)
+    netSobel = train_ddgan_brats.Sobel(args.num_channels).to(device)
     netSobel.eval()
 
     if not os.path.exists(args.output_dir):
@@ -68,7 +68,7 @@ def main(args, device):
         ssim_list[i] = SSIM(im_ts[valid_range[i, 0]:valid_range[i, 1] + 1, :, :], test_data_s[i, valid_range[i, 0]:valid_range[i, 1] + 1, :, :])
         mae_list[i] = abs(im_ts[valid_range[i, 0]:valid_range[i, 1] + 1, :, :] - test_data_s[i, valid_range[i, 0]:valid_range[i, 1] + 1, :, :]).mean()
 
-        common_pelvic.save_nii(im_ts, os.path.join(args.output_dir, "syn_%d.nii.gz" % i))
+        common_brats.save_nii(im_ts, os.path.join(args.output_dir, "syn_%d.nii.gz" % i))
 
     msg = "psnr_list:%s/%s  ssim_list:%s/%s  mae_list:%s/%s" % (psnr_list.mean(), psnr_list.std(), ssim_list.mean(), ssim_list.std(), mae_list.mean(), mae_list.std())
     print(msg)
