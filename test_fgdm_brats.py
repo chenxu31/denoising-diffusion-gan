@@ -57,20 +57,21 @@ def main(args, device):
     coeff = train_ddgan_brats.Diffusion_Coefficients(args, device)
     pos_coeff = train_ddgan_brats.Posterior_Coefficients(args, device)
 
-    psnr_list = numpy.zeros((len(test_data_t),), numpy.float32)
-    ssim_list = numpy.zeros((len(test_data_t),), numpy.float32)
-    mae_list = numpy.zeros((len(test_data_t),), numpy.float32)
+    psnr_list = numpy.zeros((test_data_t.shape[0],), numpy.float32)
+    ssim_list = numpy.zeros((test_data_t.shape[0],), numpy.float32)
+    mae_list = numpy.zeros((test_data_t.shape[0],), numpy.float32)
     for i in range(len(test_data_t)):
         im_ts = common_net.produce_results(device, lambda x: produce(args, netG, netSobel, x, coeff, pos_coeff, T=args.num_timesteps, eta=args.eta),
                                            [patch_shape, ], [test_data_t[i], ], data_shape=test_data_t[i].shape,
                                            patch_shape=patch_shape)
-        psnr_list[i] = common_metrics.psnr(im_ts[valid_range[i, 0]:valid_range[i, 1] + 1, :, :], test_data_s[i, valid_range[i, 0]:valid_range[i, 1] + 1, :, :])
-        ssim_list[i] = SSIM(im_ts[valid_range[i, 0]:valid_range[i, 1] + 1, :, :], test_data_s[i, valid_range[i, 0]:valid_range[i, 1] + 1, :, :])
-        mae_list[i] = abs(im_ts[valid_range[i, 0]:valid_range[i, 1] + 1, :, :] - test_data_s[i, valid_range[i, 0]:valid_range[i, 1] + 1, :, :]).mean()
+        psnr_list[i] = common_metrics.psnr(im_ts, test_data_s)
+        ssim_list[i] = SSIM(im_ts, test_data_s)
+        mae_list[i] = abs(im_ts - test_data_s).mean()
 
         common_brats.save_nii(im_ts, os.path.join(args.output_dir, "syn_%d.nii.gz" % i))
 
-    msg = "psnr_list:%s/%s  ssim_list:%s/%s  mae_list:%s/%s" % (psnr_list.mean(), psnr_list.std(), ssim_list.mean(), ssim_list.std(), mae_list.mean(), mae_list.std())
+    msg = ("psnr_list:%s/%s  ssim_list:%s/%s  mae_list:%s/%s" %
+           (psnr_list.mean(), psnr_list.std(), ssim_list.mean(), ssim_list.std(), mae_list.mean(), mae_list.std()))
     print(msg)
     with open(os.path.join(args.output_dir, "result.txt"), "w") as f:
         f.write(msg)
