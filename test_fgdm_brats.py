@@ -64,9 +64,9 @@ def main(args, device):
         im_ts = common_net.produce_results(device, lambda x: produce(args, netG, netSobel, x, coeff, pos_coeff, T=args.num_timesteps, eta=args.eta),
                                            [patch_shape, ], [test_data_t[i], ], data_shape=test_data_t[i].shape,
                                            patch_shape=patch_shape)
-        psnr_list[i] = common_metrics.psnr(im_ts, test_data_s)
-        ssim_list[i] = SSIM(im_ts, test_data_s)
-        mae_list[i] = abs(im_ts - test_data_s).mean()
+        psnr_list[i] = common_metrics.psnr(im_ts, test_data_s[i])
+        ssim_list[i] = SSIM(im_ts, test_data_s[i])
+        mae_list[i] = abs(im_ts - test_data_s[i]).mean()
 
         common_brats.save_nii(im_ts, os.path.join(args.output_dir, "syn_%d.nii.gz" % i))
 
